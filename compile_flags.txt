@@ -1,0 +1,5 @@
+-I./
+-I./include/
+-I./build/vcpkg_installed/x64-linux/include/
+-std=c++20
+-xc++
