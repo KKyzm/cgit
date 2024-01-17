@@ -56,24 +56,36 @@ std::vector<std::string> get_log(const std::string &ref) {
   return commits;
 }
 
-bool is_branch(const std::string &ref) {
-  if (ref.starts_with("refs/heads")) {
-    return fs::is_regular_file(cgit_root().value() / CGIT_DIR / ref);
-  } else if (ref.starts_with("heads")) {
-    return fs::is_regular_file(cgit_root().value() / CGIT_DIR / "refs" / ref);
-  } else {
-    return fs::is_regular_file(cgit_root().value() / CGIT_DIR / "refs/heads" / ref);
+std::string get_branch_name(const std::string &ref) {
+  const auto PROBABLITIES = std::set<fs::path>{
+      cgit_root().value() / CGIT_DIR / ref,                // refs/heads/master
+      cgit_root().value() / CGIT_DIR / "refs" / ref,       // heads/master
+      cgit_root().value() / CGIT_DIR / "refs/heads" / ref  // master
+  };
+  for (auto &path : PROBABLITIES) {
+    if (fs::is_regular_file(path)) {
+      return fs::relative(path, cgit_root().value() / CGIT_DIR);  // refs/heafs/master
+    }
   }
+  return {};
 }
 
 std::string checkout(const std::string &ref) {
   auto commit_id = deref(ref).value;
   auto commit = get_commit(commit_id);
-  if (is_branch(ref)) {
-    set_HEAD(std::string("ref ") + ref, false);
+  if (!get_branch_name(ref).empty()) {
+    set_HEAD(std::string("ref ") + get_branch_name(ref), false);
   } else {
     set_HEAD(commit_id, false);
   }
+  read_tree(commit.tree);
+  return commit_id;
+}
+
+std::string reset(const std::string &ref) {
+  auto commit_id = deref(ref).value;
+  auto commit = get_commit(commit_id);
+  set_HEAD(commit_id, true);
   read_tree(commit.tree);
   return commit_id;
 }

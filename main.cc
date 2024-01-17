@@ -20,6 +20,7 @@ static const std::string USAGE =
       cgit init
       cgit commit -m <message>
       cgit checkout <ref>
+      cgit reset <ref>
       cgit log [<ref>]
       cgit tag <name> [<ref>]
       cgit branch <name> [<ref>]
@@ -59,6 +60,10 @@ int main(int argc, const char **argv) {
   // checkout cmd
   if (args["checkout"].asBool()) {
     fmt::println("checkout to {}.", checkout(args["<ref>"].asString()));
+  }
+
+  if (args["reset"].asBool()) {
+    fmt::println("reset to {}.", reset(args["<ref>"].asString()));
   }
 
   // tag cmd
