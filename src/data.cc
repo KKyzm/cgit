@@ -65,7 +65,7 @@ std::string hash_tree(const std::string &root_path) {
 
 std::set<std::pair<std::string, fs::path>> get_tree(const std::string &ref) {
   auto res = std::set<std::pair<std::string, fs::path>>{};
-  auto tree = get_object(get_oid(ref), "tree");
+  auto tree = get_object(deref(ref).value, "tree");
 
   auto ss = std::stringstream{std::move(tree)};
   auto item = std::string{};
@@ -90,34 +90,36 @@ void read_tree(const std::string &tree) {
   }
 }
 
-std::string get_oid(const std::string &ref) {
-  auto ref_dirs = std::set<fs::path>{
+Ref deref(const std::string &ref) {
+  const auto REF_DIRS = std::set<fs::path>{
       cgit_root().value() / CGIT_DIR,
       cgit_root().value() / CGIT_DIR / "refs",
       cgit_root().value() / CGIT_DIR / "refs" / "tags",
       cgit_root().value() / CGIT_DIR / "refs" / "heads",
   };
-  for (auto &dir : ref_dirs) {
+
+  for (auto &dir : REF_DIRS) {
     if (fs::is_regular_file(dir / ref)) {
+      // oh, find ref!
       auto content = read_file(dir / ref);
-      if (read_file(dir / ref).starts_with("ref")) {
-        return get_oid(content.substr(content.find(' ') + 1));
+      if (content.starts_with("ref")) {
+        return deref(content.substr(content.find(' ') + 1));
       } else {
-        return content;
+        return {dir / ref, content, true};
       }
     }
   }
 
-  // ref is oid prefix
+  // it seems ref is an oid prefix
   auto obj_pathes = os_walk(cgit_root().value() / CGIT_DIR / "objects");
   assert(obj_pathes.dirs.size() == 0);
   for (auto &file : obj_pathes.files) {
     if (file.filename().string().starts_with(ref)) {
-      return file.filename();
+      return {{}, file.filename(), false};
     }
   }
 
-  throw std::runtime_error(fmt::format("No oid corresponds to {}", ref));
+  throw std::runtime_error(fmt::format("No oid corresponds to ref {}", ref));
 }
 
 std::vector<std::string> split(std::string str, const std::string &del) {
@@ -142,12 +144,14 @@ std::string to_hex(const ustring str) {
   return ss.str();
 }
 
-void set_HEAD(const std::string &oid) { write_file(cgit_root().value() / CGIT_DIR / "HEAD", oid); }
-
-std::string get_HEAD() {
-  fs::path HEAD_path = cgit_root().value() / CGIT_DIR / "HEAD";
-  if (fs::is_regular_file(HEAD_path)) {
-    return read_file(HEAD_path);
-  } else
-    return {};
+void set_HEAD(const std::string &oid, const bool deep) {
+  if (deep) {
+    auto de = deref("HEAD");
+    assert(de.is_ref == true);
+    write_file(de.path, oid);
+  } else {
+    write_file(cgit_root().value() / CGIT_DIR / "HEAD", oid);
+  }
 }
+
+std::string get_HEAD(const bool deep) { return deref("HEAD").value; }

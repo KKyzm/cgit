@@ -3,6 +3,7 @@
 #include <fmt/core.h>
 
 #include <filesystem>
+#include <stdexcept>
 
 #include "config.h"
 #include "data.h"
@@ -11,8 +12,8 @@
 std::string commit(const std::string &message) {
   auto content = std::string("commit\n");
   content += fmt::format("tree {}\n", hash_tree());
-  if (!get_HEAD().empty()) {
-    content += fmt::format("parent {}\n", get_HEAD());
+  if (!get_HEAD(true).empty()) {
+    content += fmt::format("parent {}\n", get_HEAD(true));
   }
   content += "\n";
   content += message;
@@ -21,7 +22,7 @@ std::string commit(const std::string &message) {
   auto oid = hash_object(content);
   write_file(cgit_root().value() / CGIT_DIR / "objects" / oid, content);
 
-  set_HEAD(oid);
+  set_HEAD(oid, true);
 
   return oid;
 }
@@ -46,7 +47,7 @@ Commit get_commit(const std::string &oid) {
 
 std::vector<std::string> get_log(const std::string &ref) {
   auto commits = std::vector<std::string>{};
-  auto commit_id = ref.length() > 0 ? get_oid(ref) : get_HEAD();
+  auto commit_id = ref.length() > 0 ? deref(ref).value : get_HEAD(true);
 
   while (commit_id.length() > 0) {
     commits.push_back(commit_id);
@@ -66,25 +67,28 @@ bool is_branch(const std::string &ref) {
 }
 
 std::string checkout(const std::string &ref) {
-  auto commit_id = get_oid(ref);
+  auto commit_id = deref(ref).value;
   auto commit = get_commit(commit_id);
   if (is_branch(ref)) {
-    set_HEAD(std::string("ref ") + ref);
+    set_HEAD(std::string("ref ") + ref, false);
   } else {
-    set_HEAD(commit_id);
+    set_HEAD(commit_id, false);
   }
   read_tree(commit.tree);
   return commit_id;
 }
 
 std::string create_tag(const std::string &tag, const std::string &ref) {
-  auto oid = get_oid(ref);
+  auto oid = deref(ref).value;
   write_file(cgit_root().value() / CGIT_DIR / "refs" / "tags" / tag, oid);
   return oid;
 }
 
 std::string create_branch(const std::string &branch, const std::string &ref) {
-  auto oid = get_oid(ref);
+  auto oid = deref(ref).value;
+  if (oid.empty()) {
+    throw std::runtime_error("No commit to points to.");
+  }
   write_file(cgit_root().value() / CGIT_DIR / "refs" / "heads" / branch, oid);
   return oid;
 }

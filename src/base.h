@@ -5,12 +5,6 @@
 #include <string>
 #include <vector>
 
-struct Commit {
-  std::string parent{};
-  std::string tree{};
-  std::string message{};
-};
-
 std::string commit(const std::string &);
 
 std::vector<std::string> get_log(const std::string &);

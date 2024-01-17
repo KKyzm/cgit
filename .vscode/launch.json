@@ -5,14 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "frze",
+            "name": "init",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/cgit",
             "args": [
-                "frze"
+                "init"
             ],
-            "stopAtEntry": false,
+            "stopAtEntry": true,
             "cwd": "${workspaceFolder}/build/test",
             "environment": [],
             "externalConsole": false,

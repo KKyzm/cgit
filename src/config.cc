@@ -1,13 +1,16 @@
 #include "config.h"
 
-#include "src/data.h"
+#include "data.h"
+#include "fs.h"
 
 void cgit_init() {
   fs::create_directories(CGIT_DIR);
   fs::create_directories(fs::path(CGIT_DIR) / "objects");
-  fs::create_directories(fs::path(CGIT_DIR) / "refs" / "tags");
+  fs::create_directories(fs::path(CGIT_DIR) / "refs/tags");
+  fs::create_directories(fs::path(CGIT_DIR) / "refs/heads");
 
-  set_HEAD("ref refs/heads/master");
+  write_file(fs::path(CGIT_DIR) / "refs/heads/master", "");
+  write_file(fs::path(CGIT_DIR) / "HEAD", "ref refs/heads/master");
 }
 
 std::optional<fs::path> cgit_root() {
