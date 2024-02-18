@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 project(cgit CXX)
 
 add_compile_definitions("DEBUG=$<CONFIG:Debug>")
-add_executable(cgit main.cc)
+add_executable(cgit)
 
 find_package(cryptopp CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
@@ -21,7 +21,11 @@ set(CGIT_LIBS
 )
 
 target_link_libraries(
+  cgit_lib
+    ${CGIT_THIRDPARTY_LIBS}
+)
+
+target_link_libraries(
   cgit
     ${CGIT_LIBS}
-    ${CGIT_THIRDPARTY_LIBS}
 )

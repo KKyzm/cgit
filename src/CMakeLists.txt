@@ -1,6 +1,7 @@
 add_library(
   cgit_lib
     OBJECT
+    main.cc
     data.cc
     base.cc
     config.cc

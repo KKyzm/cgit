@@ -9,9 +9,9 @@
 #include <string>
 #include <vector>
 
-#include "src/base.h"
-#include "src/config.h"
-#include "src/data.h"
+#include "base.h"
+#include "config.h"
+#include "data.h"
 
 static const std::string USAGE =
     R"(cgit.
